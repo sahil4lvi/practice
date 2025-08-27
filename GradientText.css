@@ -1,0 +1,31 @@
+/* src/components/GradientText.css */
+.animated-gradient-text {
+  position: relative;
+  display: inline-block;
+}
+
+.text-content {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation-name: gradient-shift;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.gradient-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  opacity: 0.2;
+  background-size: 200% 100%;
+  animation-name: gradient-shift;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
