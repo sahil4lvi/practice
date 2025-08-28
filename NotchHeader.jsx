@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const SleekNavbar = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -6,22 +6,37 @@ const SleekNavbar = () => {
   const [theme, setTheme] = useState("light");
   const [overlayColor, setOverlayColor] = useState(null);
   const [animationPhase, setAnimationPhase] = useState(null); // "enter" | "exit"
+  const lastScrollY = useRef(0);
 
+  // Load saved theme
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
 
+  // Handle scroll & resize
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+    const checkIfMobile = () => setIsMobile(window.innerWidth <= 768);
 
     const handleScroll = () => {
+      const currentY = window.scrollY;
       const maxScroll = 200;
-      const progress = Math.min(window.scrollY / maxScroll, 1);
+      const progress = Math.min(currentY / maxScroll, 1);
       setScrollProgress(progress);
+
+      // Detect scroll UP only
+      const isScrollingUp = currentY < lastScrollY.current;
+
+      if (isScrollingUp && currentY > 0 && currentY < 120) {
+        // Slow down the final stretch upwards
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }
+
+      lastScrollY.current = currentY;
     };
 
     checkIfMobile();
@@ -34,24 +49,21 @@ const SleekNavbar = () => {
     };
   }, []);
 
+  // Theme toggle with wipe animation
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
 
-    // Step 1: start circle spread
     setOverlayColor(newTheme === "dark" ? "#0f0f11" : "#f9f9f9");
     setAnimationPhase("enter");
 
-    // Step 2: once fully covered (after 0.45s), switch theme
     setTimeout(() => {
       setTheme(newTheme);
       document.documentElement.setAttribute("data-theme", newTheme);
       localStorage.setItem("theme", newTheme);
 
-      // Step 3: trigger exit animation (circle shrinks away bottom-left)
       setAnimationPhase("exit");
     }, 450);
 
-    // Step 4: remove overlay once exit is done
     setTimeout(() => {
       setOverlayColor(null);
       setAnimationPhase(null);
@@ -94,7 +106,6 @@ const SleekNavbar = () => {
           background: var(--overlay-color);
         }
 
-        /* enter: expand from top-right */
         .theme-overlay.enter {
           clip-path: circle(0% at 100% 0%);
           animation: wipeEnter 0.45s cubic-bezier(0.77, 0, 0.175, 1) forwards;
@@ -105,7 +116,6 @@ const SleekNavbar = () => {
           }
         }
 
-        /* exit: shrink to bottom-left */
         .theme-overlay.exit {
           clip-path: circle(150% at 0% 100%);
           animation: wipeExit 0.45s cubic-bezier(0.77, 0, 0.175, 1) forwards;
@@ -199,6 +209,14 @@ const SleekNavbar = () => {
           {theme === "light" ? "☀" : "🌙"}
         </div>
       </nav>
+
+      <div style={{ height: "250vh", paddingTop: "80px" }}>
+        <h1>Scroll Down & Up</h1>
+        <p>
+          Scroll down normally. But when you scroll back up quickly, near the
+          top it slows down smoothly before snapping to the top.
+        </p>
+      </div>
     </div>
   );
 };
